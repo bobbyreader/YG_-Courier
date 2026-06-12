@@ -31,7 +31,7 @@ python rpa_bot.py
 1. 先运行一次，看能否打开登录页
 2. 用 Playwright 的 `codegen` 录制选择器：
    ```powershell
-   playwright codegen https://www.zhyw.spic/login/?c_url=/ --ignore-https-errors
+   playwright codegen https://www.abc.com --ignore-https-errors
    ```
 3. 把录制的选择器更新到 `config.py`
 4. 实现 `submit_ticket` 方法
