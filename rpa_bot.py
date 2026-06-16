@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import winreg
 
@@ -490,7 +491,11 @@ def run_rpa(assignee: str, description: str, flow_type: str = "support", on_log=
 
     except Exception as e:
         logger.log(f"\n[RPA] 错误: {e}")
-        bot.take_screenshot("error.png")
+        if bot and bot.page:
+            try:
+                bot.take_screenshot("error.png")
+            except Exception as screenshot_error:
+                logger.log(f"[RPA] 保存错误截图失败: {screenshot_error}")
         logger.log("[RPA] 浏览器保持打开，请查看错误页面。")
     finally:
         if not success:

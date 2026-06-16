@@ -279,9 +279,42 @@ def execute_script(
 
     # 参数化替换
     if params:
-        for original, new_val in params.items():
-            script_content = script_content.replace(f'"{original}"', f'"{new_val}"')
-            script_content = script_content.replace(f"'{original}'", f"'{new_val}'")
+        def escape_python_string_value(value: str, quote: str) -> str:
+            return value.replace("\\", "\\\\").replace(quote, f"\\{quote}")
+
+        sorted_params = sorted(params.items(), key=lambda kv: len(kv[0]), reverse=True)
+        for original, new_val in sorted_params:
+            escaped_orig = re.escape(original)
+
+            def replace_with_double_quotes(match):
+                escaped_new = escape_python_string_value(new_val, '"')
+                return f'{match.group(1)}"{escaped_new}"{match.group(2)}'
+
+            def replace_with_single_quotes(match):
+                escaped_new = escape_python_string_value(new_val, "'")
+                return f"{match.group(1)}'{escaped_new}'{match.group(2)}"
+
+            script_content = re.sub(
+                rf'(fill\s*\(\s*["\'][^"\']*["\']\s*,\s*)"{escaped_orig}"(\s*\))',
+                replace_with_double_quotes,
+                script_content,
+            )
+            script_content = re.sub(
+                rf"(fill\s*\(\s*['\"][^'\"]*['\"]\s*,\s*)'{escaped_orig}'(\s*\))",
+                replace_with_single_quotes,
+                script_content,
+            )
+            for method in ("fill", "type"):
+                script_content = re.sub(
+                    rf'((?:get_by|locator|page)\S*\.{method}\s*\(\s*)"{escaped_orig}"(\s*\))',
+                    replace_with_double_quotes,
+                    script_content,
+                )
+                script_content = re.sub(
+                    rf"((?:get_by|locator|page)\S*\.{method}\s*\(\s*)'{escaped_orig}'(\s*\))",
+                    replace_with_single_quotes,
+                    script_content,
+                )
 
     # 替换硬编码账号
     if replace_credentials and (env_username or env_password):
